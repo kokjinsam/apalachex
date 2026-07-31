@@ -1,0 +1,62 @@
+#!/bin/sh
+set -u
+
+name=${0##*/}
+
+if [ "${1:-}" = "version" ]; then
+  case "$name" in
+    version-prefixed) printf 'v0.58.3\n' ;;
+    version-double-prefixed) printf 'vv0.58.3\n' ;;
+    unsupported) printf '0.58.2\n' ;;
+    banner) printf 'Apalache\n0.58.3\n' ;;
+    invalid-version) printf '\377version\n' ;;
+    version-fail) printf 'probe failed\n' >&2; exit 2 ;;
+    *) printf '0.58.3\n' ;;
+  esac
+  exit 0
+fi
+
+run_directory=
+for argument in "$@"; do
+  case "$argument" in
+    --run-dir=*) run_directory=${argument#--run-dir=} ;;
+  esac
+done
+
+[ -n "$run_directory" ] || exit 64
+printf '%s\n' "$PWD" > "$run_directory/working-directory.txt"
+printf '%s\n' "$@" > "$run_directory/argv.txt"
+
+if [ -f "$run_directory/apalachex-run.json" ]; then
+  cp "$run_directory/apalachex-run.json" "$run_directory/running-manifest-snapshot.json"
+fi
+
+case "$name" in
+  no-itf) printf 'no artifact\n'; exit 0 ;;
+  no-itf-nonzero) printf 'malformed input\n' >&2; exit 9 ;;
+  long-output)
+    dd if=/dev/zero bs=7000 count=1 2>/dev/null | tr '\000' 'x'
+    printf '\377\n' >&2
+    exit 9
+    ;;
+  binary-output)
+    printf 'stdout\377bytes\n'
+    printf 'stderr\376bytes\n' >&2
+    printf '{}\n' > "$run_directory/binary.itf.json"
+    ;;
+  status12)
+    printf 'counterexample\n'
+    printf '{}\n' > "$run_directory/counterexample.itf.json"
+    exit 12
+    ;;
+  *)
+    printf 'standard output\n'
+    printf 'standard error\n' >&2
+    printf '{}\n' > "$run_directory/z.itf.json"
+    printf '{}\n' > "$run_directory/a.itf.json"
+    mkdir "$run_directory/directory.itf.json"
+    mkdir "$run_directory/nested"
+    printf '{}\n' > "$run_directory/nested/nested.itf.json"
+    ln -s "$run_directory/a.itf.json" "$run_directory/symlink.itf.json"
+    ;;
+esac

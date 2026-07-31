@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  minimum:
+    name: Elixir 1.18.4 / OTP 27.0
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124
+        with:
+          elixir-version: 1.18.4
+          otp-version: "27.0"
+          install-hex: false
+      - run: mix local.hex 2.4.2 --force
+      - run: mix deps.get
+      - run: mix compile --warnings-as-errors
+      - run: mix test
+
+  current:
+    name: Elixir 1.20.0 / OTP 27.0
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124
+        with:
+          elixir-version: 1.20.0
+          otp-version: "27.0"
+      - run: mix deps.get
+      - run: mix check
+      - run: mix docs --warnings-as-errors
+      - run: scripts/audit_package.sh
+      - run: scripts/consumer_smoke.sh
+
+  real-apalache:
+    name: Real Apalache 0.58.3
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124
+        with:
+          elixir-version: 1.20.0
+          otp-version: "27.0"
+      - uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9
+        with:
+          distribution: temurin
+          java-version: "17"
+      - run: mix deps.get
+      - run: scripts/install_apalache.sh "$GITHUB_WORKSPACE/.apalache"
+      - run: echo "$GITHUB_WORKSPACE/.apalache/bin" >> "$GITHUB_PATH"
+      - run: mix test --include apalache test/apalachex/real_apalache_test.exs
