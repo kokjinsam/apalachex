@@ -24,10 +24,10 @@ defmodule Apalachex.Plan do
     length = Keyword.fetch!(options, :length)
     run_directory = validate_run_directory!(Keyword.fetch!(options, :run_directory))
 
-    unless mode in [:simulate, :check],
+    if mode not in [:simulate, :check],
       do: raise(ArgumentError, "expected :mode to be :simulate or :check")
 
-    unless is_integer(length) and length >= 0,
+    if !(is_integer(length) and length >= 0),
       do: raise(ArgumentError, "expected :length to be a nonnegative integer")
 
     build(spec, mode, length, run_directory, options)
@@ -36,7 +36,7 @@ defmodule Apalachex.Plan do
   def new(_spec, _options), do: raise(ArgumentError, "expected an Apalachex.Spec")
 
   defp validate_options!(options) do
-    unless Keyword.keyword?(options), do: raise(ArgumentError, "expected a keyword list")
+    if !Keyword.keyword?(options), do: raise(ArgumentError, "expected a keyword list")
     keys = Keyword.keys(options)
     if Enum.uniq(keys) != keys, do: raise(ArgumentError, "duplicate options are not allowed")
 
@@ -55,8 +55,7 @@ defmodule Apalachex.Plan do
     Path.expand(value)
   end
 
-  defp validate_run_directory!(_value),
-    do: raise(ArgumentError, "expected :run_directory to be a non-blank string")
+  defp validate_run_directory!(_value), do: raise(ArgumentError, "expected :run_directory to be a non-blank string")
 
   defp build(spec, :simulate, length, run_directory, options) do
     max_run =

@@ -1,7 +1,8 @@
 defmodule Apalachex.PlanTest do
   use ExUnit.Case, async: true
 
-  alias Apalachex.{Plan, Spec}
+  alias Apalachex.Plan
+  alias Apalachex.Spec
 
   @source "/formal models/Counter.tla"
   @config "/formal config/Counter.cfg"

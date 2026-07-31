@@ -5,7 +5,7 @@ defmodule Apalachex.SpecTest do
   alias Apalachex.Spec.Error
 
   setup do
-    root = Path.join("tmp/tests", "spec-#{System.unique_integer([:positive])}") |> Path.expand()
+    root = "tmp/tests" |> Path.join("spec-#{System.unique_integer([:positive])}") |> Path.expand()
     File.mkdir_p!(root)
     %{root: root}
   end
@@ -55,8 +55,7 @@ defmodule Apalachex.SpecTest do
     uppercase = Path.join(root, "Missing.TLA")
     extensionless = Path.join(root, "Missing")
 
-    assert {:error,
-            %Error{field: :source, path: ^uppercase, reason: {:invalid_extension, ".TLA"}}} =
+    assert {:error, %Error{field: :source, path: ^uppercase, reason: {:invalid_extension, ".TLA"}}} =
              Spec.new(source: uppercase)
 
     assert {:error, %Error{reason: {:invalid_extension, ""}}} =

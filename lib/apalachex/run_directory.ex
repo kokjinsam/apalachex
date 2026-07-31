@@ -32,7 +32,7 @@ defmodule Apalachex.RunDirectory do
   def build(_spec, _options), do: raise(ArgumentError, "expected an Apalachex.Spec")
 
   defp validate_options!(options) do
-    unless Keyword.keyword?(options), do: raise(ArgumentError, "expected a keyword list")
+    if !Keyword.keyword?(options), do: raise(ArgumentError, "expected a keyword list")
     keys = Keyword.keys(options)
     if Enum.uniq(keys) != keys, do: raise(ArgumentError, "duplicate options are not allowed")
 
@@ -48,13 +48,12 @@ defmodule Apalachex.RunDirectory do
   defp validate_timestamp!(_value), do: raise(ArgumentError, "expected a UTC DateTime")
 
   defp validate_suffix!(suffix) when is_binary(suffix) do
-    unless Regex.match?(@suffix, suffix) do
+    if !Regex.match?(@suffix, suffix) do
       raise ArgumentError, "expected exactly six lowercase hexadecimal characters"
     end
   end
 
-  defp validate_suffix!(_value),
-    do: raise(ArgumentError, "expected exactly six lowercase hexadecimal characters")
+  defp validate_suffix!(_value), do: raise(ArgumentError, "expected exactly six lowercase hexadecimal characters")
 
   defp validate_root!(root) when is_binary(root) do
     if String.trim(root) == "", do: raise(ArgumentError, "expected a non-blank root")

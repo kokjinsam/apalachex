@@ -3,12 +3,12 @@ defmodule Apalachex.Spec do
   Identifies validated TLA+ source and optional configuration files.
   """
 
+  alias Apalachex.Spec.Error
+
   @enforce_keys [:source]
   defstruct [:source, :config]
 
   @type t :: %__MODULE__{source: Path.t(), config: Path.t() | nil}
-
-  alias Apalachex.Spec.Error
 
   @doc "Validates source and optional config artifacts."
   @spec new(keyword()) :: {:ok, t()} | {:error, Error.t()}
@@ -22,14 +22,14 @@ defmodule Apalachex.Spec do
   end
 
   defp validate_options!(options) do
-    unless Keyword.keyword?(options), do: raise(ArgumentError, "expected a keyword list")
+    if !Keyword.keyword?(options), do: raise(ArgumentError, "expected a keyword list")
 
     keys = Keyword.keys(options)
     if Enum.uniq(keys) != keys, do: raise(ArgumentError, "duplicate options are not allowed")
 
     unknown = keys -- [:source, :config]
     if unknown != [], do: raise(ArgumentError, "unknown options: #{inspect(unknown)}")
-    unless :source in keys, do: raise(ArgumentError, "missing required option :source")
+    if :source not in keys, do: raise(ArgumentError, "missing required option :source")
 
     validate_path_option!(:source, Keyword.fetch!(options, :source))
 

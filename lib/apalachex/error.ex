@@ -1,6 +1,8 @@
 defmodule Apalachex.Error do
   @moduledoc "A structured Apalache execution, artifact, or manifest failure."
 
+  alias Apalachex.Output
+
   defexception [
     :phase,
     :reason,
@@ -34,8 +36,6 @@ defmodule Apalachex.Error do
           manifest_failure: term() | nil
         }
 
-  alias Apalachex.Output
-
   @impl Exception
   def message(%__MODULE__{} = error) do
     message =
@@ -66,7 +66,7 @@ defmodule Apalachex.Error do
   defp paths(paths), do: "ITF paths: #{inspect(paths)}"
   defp output(nil), do: nil
   defp output(""), do: nil
-  defp output(output), do: "output tail:\n#{Output.tail(output) |> elem(0)}"
+  defp output(output), do: "output tail:\n#{output |> Output.tail() |> elem(0)}"
   defp manifest_failure(nil), do: nil
   defp manifest_failure(reason), do: "secondary manifest failure: #{render(reason)}"
   defp render(term), do: term |> inspect() |> Output.tail() |> elem(0)

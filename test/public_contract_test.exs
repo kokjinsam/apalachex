@@ -1,21 +1,24 @@
 defmodule Apalachex.PublicContractTest do
   use ExUnit.Case, async: true
 
-  alias Apalachex.{Error, Plan, Result, Spec}
+  alias Apalachex.Error
+  alias Apalachex.Plan
+  alias Apalachex.Result
+  alias Apalachex.Spec
 
   test "freezes the public struct fields" do
-    assert Map.keys(Spec.__struct__()) |> Enum.sort() == [:__struct__, :config, :source]
+    assert Spec.__struct__() |> Map.keys() |> Enum.sort() == [:__struct__, :config, :source]
 
-    assert Map.keys(Spec.Error.__struct__()) |> Enum.sort() ==
+    assert Spec.Error.__struct__() |> Map.keys() |> Enum.sort() ==
              [:__exception__, :__struct__, :field, :path, :reason]
 
-    assert Map.keys(Plan.__struct__()) |> Enum.sort() ==
+    assert Plan.__struct__() |> Map.keys() |> Enum.sort() ==
              [:__struct__, :argv, :mode, :options, :run_directory, :spec, :working_directory]
 
-    assert Map.keys(Result.__struct__()) |> Enum.sort() ==
+    assert Result.__struct__() |> Map.keys() |> Enum.sort() ==
              [:__struct__, :executable, :exit_status, :itf_paths, :output, :plan, :version]
 
-    assert Map.keys(Error.__struct__()) |> Enum.sort() ==
+    assert Error.__struct__() |> Map.keys() |> Enum.sort() ==
              [
                :__exception__,
                :__struct__,

@@ -1,7 +1,10 @@
 defmodule Apalachex.Manifest do
   @moduledoc false
 
-  alias Apalachex.{Error, Output, Plan, Result}
+  alias Apalachex.Error
+  alias Apalachex.Output
+  alias Apalachex.Plan
+  alias Apalachex.Result
 
   @filename "apalachex-run.json"
   @writer_key {__MODULE__, :writer}
@@ -41,7 +44,7 @@ defmodule Apalachex.Manifest do
     end
   end
 
-  @doc false
+  @doc "Runs a function with a process-local manifest writer."
   def with_writer(writer, function) when is_function(writer, 2) and is_function(function, 0) do
     previous = Process.put(@writer_key, writer)
 
@@ -54,7 +57,7 @@ defmodule Apalachex.Manifest do
     end
   end
 
-  @doc false
+  @doc "Atomically writes a manifest document."
   @spec write_atomic(Path.t(), map()) :: :ok | {:error, term()}
   def write_atomic(path, document) do
     with {:ok, encoded} <- encode(document) do
@@ -143,7 +146,7 @@ defmodule Apalachex.Manifest do
   defp producer_version do
     case Application.spec(:apalachex, :vsn) do
       version when is_list(version) -> List.to_string(version)
-      version when not is_nil(version) -> to_string(version)
+      version when version != nil -> to_string(version)
       nil -> "0.1.0"
     end
   end
@@ -161,11 +164,12 @@ defmodule Apalachex.Manifest do
   end
 
   defp persist(path, contents) do
+    basename = Path.basename(path)
+
     temporary =
-      Path.join(
-        Path.dirname(path),
-        ".#{Path.basename(path)}.tmp-#{System.unique_integer([:positive, :monotonic])}"
-      )
+      path
+      |> Path.dirname()
+      |> Path.join(".#{basename}.tmp-#{System.unique_integer([:positive, :monotonic])}")
 
     result =
       with :ok <- File.write(temporary, contents, [:binary, :exclusive]),

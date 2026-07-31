@@ -1,7 +1,10 @@
 defmodule Apalachex.RealApalacheTest do
   use ExUnit.Case, async: false
 
-  alias Apalachex.{Error, Plan, Result, Spec}
+  alias Apalachex.Error
+  alias Apalachex.Plan
+  alias Apalachex.Result
+  alias Apalachex.Spec
 
   @moduletag :apalache
 
@@ -13,7 +16,8 @@ defmodule Apalachex.RealApalacheTest do
         flunk("Apalache 0.58.3 must be installed on PATH")
 
     root =
-      Path.join("tmp/tests", "real-apalache-#{System.unique_integer([:positive])}")
+      "tmp/tests"
+      |> Path.join("real-apalache-#{System.unique_integer([:positive])}")
       |> Path.expand()
 
     File.mkdir_p!(root)
@@ -79,7 +83,7 @@ defmodule Apalachex.RealApalacheTest do
 
     assert status != 0
     assert File.dir?(run_directory)
-    assert File.regular?(Path.join(run_directory, "apalachex-run.json"))
+    assert run_directory |> Path.join("apalachex-run.json") |> File.regular?()
     assert manifest(run_directory)["outcome"] == "failed"
   end
 
@@ -88,8 +92,8 @@ defmodule Apalachex.RealApalacheTest do
     File.mkdir!(directory)
     source = Path.join(directory, "#{name}.tla")
     config = Path.join(directory, "#{name}.cfg")
-    File.cp!(Path.join(@fixtures, "#{name}.tla"), source)
-    File.cp!(Path.join(@fixtures, "#{name}.cfg"), config)
+    @fixtures |> Path.join("#{name}.tla") |> File.cp!(source)
+    @fixtures |> Path.join("#{name}.cfg") |> File.cp!(config)
 
     assert {:ok, spec} =
              Spec.new(

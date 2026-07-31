@@ -24,8 +24,7 @@ defmodule Apalachex.Spec.Error do
   defp format_reason(:not_found), do: "file not found"
   defp format_reason(:not_a_regular_file), do: "path is not a regular file"
 
-  defp format_reason({:invalid_extension, extension}),
-    do: "invalid extension #{inspect(extension)}"
+  defp format_reason({:invalid_extension, extension}), do: "invalid extension #{inspect(extension)}"
 
   defp format_reason({:filesystem, reason}), do: "filesystem error #{inspect(reason)}"
 end

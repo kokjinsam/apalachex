@@ -1,3 +1,4 @@
 [
-  inputs: ["{mix,.formatter}.exs", "{config,lib,support,test}/**/*.{ex,exs}"]
+  plugins: [Styler],
+  inputs: ["{mix,.formatter,.credo}.exs", "{config,lib,support,test}/**/*.{ex,exs}"]
 ]

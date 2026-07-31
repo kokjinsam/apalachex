@@ -1,7 +1,8 @@
 defmodule Apalachex.RunDirectoryTest do
   use ExUnit.Case, async: true
 
-  alias Apalachex.{RunDirectory, Spec}
+  alias Apalachex.RunDirectory
+  alias Apalachex.Spec
 
   @generated_at ~U[2026-07-31 05:06:07.999999Z]
 

@@ -1,14 +1,17 @@
 defmodule Apalachex.RunTest do
   use ExUnit.Case, async: false
 
-  alias Apalachex.{Error, Plan, Result, Spec}
+  alias Apalachex.Error
+  alias Apalachex.Plan
+  alias Apalachex.Result
+  alias Apalachex.Spec
 
   @fake Path.expand("../fixtures/apalache/fake-apalache", __DIR__)
   @source Path.expand("../fixtures/specs/Counter.tla", __DIR__)
   @config Path.expand("../fixtures/specs/Counter.cfg", __DIR__)
 
   setup do
-    root = Path.join("tmp/tests", "run-#{System.unique_integer([:positive])}") |> Path.expand()
+    root = "tmp/tests" |> Path.join("run-#{System.unique_integer([:positive])}") |> Path.expand()
     File.mkdir_p!(root)
     %{root: root}
   end
@@ -50,7 +53,7 @@ defmodule Apalachex.RunTest do
             }} = Apalachex.run(plan, executable: "nonexistent-apalachex-candidate")
 
     refute File.exists?(run_directory)
-    refute File.exists?(Path.join(run_directory, "apalachex-run.json"))
+    refute run_directory |> Path.join("apalachex-run.json") |> File.exists?()
   end
 
   test "resolves the default and bare executable through PATH", %{root: root} do
@@ -184,13 +187,13 @@ defmodule Apalachex.RunTest do
     assert output == <<"stdout", 255, "bytes\nstderr", 254, "bytes\n">>
     assert itf == Path.join(run_directory, "binary.itf.json")
 
-    assert File.read!(Path.join(run_directory, "working-directory.txt")) |> String.trim() ==
+    assert run_directory |> Path.join("working-directory.txt") |> File.read!() |> String.trim() ==
              Path.dirname(source)
 
-    assert File.read!(Path.join(run_directory, "argv.txt")) |> String.split("\n", trim: true) ==
+    assert run_directory |> Path.join("argv.txt") |> File.read!() |> String.split("\n", trim: true) ==
              custom_plan.argv
 
-    refute File.exists?(Path.join(working_directory, "forbidden"))
+    refute working_directory |> Path.join("forbidden") |> File.exists?()
   end
 
   test "discovers only top-level regular ITFs in lexical order", %{root: root} do

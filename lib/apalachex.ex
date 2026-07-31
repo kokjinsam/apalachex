@@ -9,7 +9,10 @@ defmodule Apalachex do
 
   import Bitwise
 
-  alias Apalachex.{Error, Manifest, Plan, Result}
+  alias Apalachex.Error
+  alias Apalachex.Manifest
+  alias Apalachex.Plan
+  alias Apalachex.Result
 
   @supported_version Version.parse!("0.58.3")
 
@@ -39,7 +42,7 @@ defmodule Apalachex do
   def run(_plan, _options), do: raise(ArgumentError, "expected an Apalachex.Plan")
 
   defp validate_options!(options) do
-    unless Keyword.keyword?(options), do: raise(ArgumentError, "expected a keyword list")
+    if !Keyword.keyword?(options), do: raise(ArgumentError, "expected a keyword list")
     keys = Keyword.keys(options)
     if Enum.uniq(keys) != keys, do: raise(ArgumentError, "duplicate options are not allowed")
 
@@ -165,7 +168,7 @@ defmodule Apalachex do
   end
 
   defp reserve(plan, executable, version) do
-    case File.mkdir_p(Path.dirname(plan.run_directory)) do
+    case plan.run_directory |> Path.dirname() |> File.mkdir_p() do
       :ok ->
         case File.mkdir(plan.run_directory) do
           :ok ->
@@ -260,7 +263,7 @@ defmodule Apalachex do
     names
     |> Enum.filter(&String.ends_with?(&1, ".itf.json"))
     |> Enum.reduce_while({:ok, []}, fn name, {:ok, paths} ->
-      path = Path.join(plan.run_directory, name) |> Path.expand()
+      path = plan.run_directory |> Path.join(name) |> Path.expand()
 
       case File.lstat(path) do
         {:ok, %File.Stat{type: :regular}} ->
@@ -344,14 +347,11 @@ defmodule Apalachex do
     )
   end
 
-  defp manifest_reason(stage, _path, {:encoding, reason}),
-    do: {:manifest_encoding_failed, stage, reason}
+  defp manifest_reason(stage, _path, {:encoding, reason}), do: {:manifest_encoding_failed, stage, reason}
 
-  defp manifest_reason(stage, path, {:write, reason}),
-    do: {:manifest_write_failed, stage, path, reason}
+  defp manifest_reason(stage, path, {:write, reason}), do: {:manifest_write_failed, stage, path, reason}
 
-  defp manifest_reason(stage, path, reason),
-    do: {:manifest_write_failed, stage, path, reason}
+  defp manifest_reason(stage, path, reason), do: {:manifest_write_failed, stage, path, reason}
 
   defp command(executable, argv, options) do
     {output, status} = System.cmd(executable, argv, options)

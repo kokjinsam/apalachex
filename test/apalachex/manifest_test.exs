@@ -1,14 +1,19 @@
 defmodule Apalachex.ManifestTest do
   use ExUnit.Case, async: false
 
-  alias Apalachex.{Error, Manifest, Plan, Result, Spec}
+  alias Apalachex.Error
+  alias Apalachex.Manifest
+  alias Apalachex.Plan
+  alias Apalachex.Result
+  alias Apalachex.Spec
 
   @fake Path.expand("../fixtures/apalache/fake-apalache", __DIR__)
   @source Path.expand("../fixtures/specs/Counter.tla", __DIR__)
 
   setup do
     root =
-      Path.join("tmp/tests", "manifest-#{System.unique_integer([:positive])}")
+      "tmp/tests"
+      |> Path.join("manifest-#{System.unique_integer([:positive])}")
       |> Path.expand()
 
     File.mkdir_p!(root)
@@ -39,7 +44,7 @@ defmodule Apalachex.ManifestTest do
     assert completed["execution"]["exit_status"] == 0
     assert completed["artifacts"]["itf_paths"] == Enum.map(paths, &Path.basename/1)
     assert completed["failure"] == nil
-    assert File.read!(completed_path) |> String.ends_with?("\n")
+    assert completed_path |> File.read!() |> String.ends_with?("\n")
     assert {:ok, _started, 0} = DateTime.from_iso8601(completed["started_at"])
     assert {:ok, _finished, 0} = DateTime.from_iso8601(completed["completed_at"])
   end
@@ -52,8 +57,8 @@ defmodule Apalachex.ManifestTest do
              Apalachex.run(plan, executable: executable)
 
     assert byte_size(output) > 6000
-    assert String.valid?(Exception.message(error))
-    assert byte_size(Exception.message(error)) <= 4096
+    assert error |> Exception.message() |> String.valid?()
+    assert error |> Exception.message() |> byte_size() <= 4096
 
     summary = decode(Path.join(plan.run_directory, "apalachex-run.json"))["execution"]["output"]
     assert summary["byte_size"] == byte_size(output)
@@ -80,7 +85,7 @@ defmodule Apalachex.ManifestTest do
 
     assert manifest_path == Path.join(plan.run_directory, "apalachex-run.json")
     assert File.dir?(plan.run_directory)
-    refute File.exists?(Path.join(plan.run_directory, "argv.txt"))
+    refute plan.run_directory |> Path.join("argv.txt") |> File.exists?()
   end
 
   test "a final manifest failure after success becomes the primary contextual error", %{
@@ -112,8 +117,7 @@ defmodule Apalachex.ManifestTest do
             %Error{
               phase: :itf_discovery,
               reason: :no_itf_artifacts,
-              manifest_failure:
-                {:manifest_write_failed, :final, manifest_path, :forced_final_failure}
+              manifest_failure: {:manifest_write_failed, :final, manifest_path, :forced_final_failure}
             }} = with_final_failure(fn -> Apalachex.run(plan, executable: executable) end)
 
     assert manifest_path == Path.join(plan.run_directory, "apalachex-run.json")
