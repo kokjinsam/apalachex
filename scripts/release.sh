@@ -206,13 +206,13 @@ origin_sha=$(git rev-parse origin/main)
 [[ "$origin_sha" == "$release_sha" ]] || fail "origin/main must still equal release SHA $release_sha"
 require_artifacts_absent
 
-git tag --annotate "$tag" --message "Apalachex $version" "$release_sha"
+git tag --annotate "$tag" "$release_sha"
 mix hex.publish --yes
 git push origin "refs/tags/$tag:refs/tags/$tag"
 gh release create "$tag" \
   --repo "$repository" \
   --verify-tag \
-  --title "Apalachex $version" \
+  --title "v$version" \
   --notes-file "$notes_file"
 
 mix hex.info "$package" "$version" >/dev/null
