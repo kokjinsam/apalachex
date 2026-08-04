@@ -9,8 +9,8 @@ consumer="$smoke_root/consumer"
 cd "$repository"
 mix hex.build --unpack --output "$package"
 mkdir "$consumer"
-cp support/consumer/mix.exs "$consumer/mix.exs"
-cp -R support/consumer/test "$consumer/test"
+cp test/support/consumer/mix.exs "$consumer/mix.exs"
+cp -R test/support/consumer/test "$consumer/test"
 
 cd "$consumer"
 APALACHEX_PACKAGE_PATH="$package" mix deps.get
