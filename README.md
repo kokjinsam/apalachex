@@ -84,6 +84,14 @@ just test-apalache
 the latter is installed by the owned asdf plugin and selected by the repository
 toolchain.
 
+### Maintainer release
+
+Update the version in `mix.exs` and add its dated changelog section. Commit and
+push the prepared `main`, ensure CI is green, then run `just release`.
+
+The command publishes the prepared version to Hex and creates its GitHub tag
+and release. It does not prepare, edit, commit, or push `main`.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

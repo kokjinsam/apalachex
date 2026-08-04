@@ -16,6 +16,7 @@ setup:
       'java|https://github.com/halcyon/asdf-java.git'
       'just|https://github.com/olofvndrhr/asdf-just.git'
       'apalache|https://github.com/kokjinsam/asdf-apalache.git'
+      'github-cli|https://github.com/bartlomiejdanek/asdf-github-cli.git'
     )
 
     for entry in "${plugins[@]}"; do
@@ -57,3 +58,7 @@ consumer-smoke:
 
 test-apalache:
     mix test --include apalache test/apalachex/real_apalache_test.exs
+
+# Locally publish the prepared version to Hex and create its GitHub tag/release.
+release:
+    scripts/release.sh
