@@ -68,12 +68,21 @@ least one absolute top-level regular `.itf.json` path, sorted lexically.
 ## Development
 
 ```sh
-mix check
-mix test --include apalache test/apalachex/real_apalache_test.exs
-mix docs --warnings-as-errors
-scripts/audit_package.sh
-scripts/consumer_smoke.sh
+asdf plugin add just https://github.com/olofvndrhr/asdf-just.git
+asdf install just 1.54.0
+just setup
+just test
+just check
+just docs
+just package-audit
+just consumer-smoke
+just test-apalache
 ```
+
+`just setup` requires asdf 0.16.5 and installs the pinned tools from
+`.tool-versions`. The consumer and real-Apalache checks require Apalache 0.58.3;
+the latter is installed by the owned asdf plugin and selected by the repository
+toolchain.
 
 ## License
 
