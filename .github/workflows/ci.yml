@@ -25,7 +25,7 @@ jobs:
       - name: Bootstrap just
         run: |
           asdf plugin add just https://github.com/olofvndrhr/asdf-just.git
-          asdf install just 1.54.0
+          asdf install just
       - run: just deps
       - run: just test
 
@@ -44,7 +44,7 @@ jobs:
       - name: Bootstrap just
         run: |
           asdf plugin add just https://github.com/olofvndrhr/asdf-just.git
-          asdf install just 1.54.0
+          asdf install just
       - run: just deps
       - run: just check
       - run: just docs
@@ -71,10 +71,10 @@ jobs:
       - name: Bootstrap just
         run: |
           asdf plugin add just https://github.com/olofvndrhr/asdf-just.git
-          asdf install just 1.54.0
+          asdf install just
       - name: Install Apalache
         run: |
           asdf plugin add apalache https://github.com/kokjinsam/asdf-apalache.git
-          asdf install apalache 0.58.3
+          asdf install apalache
       - run: just deps
       - run: just test-apalache
