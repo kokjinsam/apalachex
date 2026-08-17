@@ -2,9 +2,6 @@ defmodule Apalachex do
   @moduledoc """
   Runs deterministic Apalache plans on POSIX systems and returns retained ITF
   artifact paths.
-
-  Windows execution is unsupported in 0.1.0 and is rejected before executable
-  discovery, version probing, or run-directory allocation.
   """
 
   import Bitwise
@@ -16,26 +13,26 @@ defmodule Apalachex do
 
   @supported_version Version.parse!("0.58.3")
 
+  @type run_option :: {:executable, String.t()} | {:timeout, pos_integer() | :infinity}
+
   @doc "Runs an Apalache plan with the default executable on a POSIX system."
   @spec run(Plan.t()) :: {:ok, Result.t()} | {:error, Error.t()}
   def run(plan), do: run(plan, [])
 
   @doc """
-  Runs an Apalache plan on a POSIX system; the only option is `:executable`.
+  Runs an Apalache plan synchronously on a POSIX system.
 
-  On Windows, returns an `:execution` error with
-  `{:unsupported_platform, :win32}` after validating options and before
-  executable discovery, version probing, or run-directory allocation.
+  `:executable` selects the Apalache executable. `:timeout` is a positive
+  millisecond command-wait bound or `:infinity`; its default is `:infinity`.
   """
-  @spec run(Plan.t(), keyword()) :: {:ok, Result.t()} | {:error, Error.t()}
+  @spec run(Plan.t(), [run_option()]) :: {:ok, Result.t()} | {:error, Error.t()}
   def run(%Plan{} = plan, options) do
     requested = validate_options!(options)
 
-    with :ok <- validate_platform(plan),
-         {:ok, executable} <- resolve_executable(plan, requested),
+    with {:ok, executable} <- resolve_executable(plan, requested.executable),
          {:ok, version} <- probe_version(plan, executable),
          :ok <- reserve(plan, executable, version) do
-      run_reserved(plan, executable, version)
+      run_reserved(plan, executable, version, requested.timeout)
     end
   end
 
@@ -43,30 +40,35 @@ defmodule Apalachex do
 
   defp validate_options!(options) do
     if !Keyword.keyword?(options), do: raise(ArgumentError, "expected a keyword list")
+    validate_option_keys!(options)
+
+    %{
+      executable: options |> Keyword.get(:executable, "apalache-mc") |> validate_executable_option!(),
+      timeout: options |> Keyword.get(:timeout, :infinity) |> validate_timeout!()
+    }
+  end
+
+  defp validate_option_keys!(options) do
     keys = Keyword.keys(options)
     if Enum.uniq(keys) != keys, do: raise(ArgumentError, "duplicate options are not allowed")
 
-    unknown = keys -- [:executable]
+    unknown = keys -- [:executable, :timeout]
     if unknown != [], do: raise(ArgumentError, "unknown options: #{inspect(unknown)}")
-
-    case Keyword.get(options, :executable, "apalache-mc") do
-      executable when is_binary(executable) ->
-        if String.trim(executable) == "",
-          do: raise(ArgumentError, "expected :executable to be a non-blank string")
-
-        executable
-
-      _value ->
-        raise ArgumentError, "expected :executable to be a non-blank string"
-    end
   end
 
-  defp validate_platform(plan) do
-    case Process.get({__MODULE__, :os_type}, :os.type()) do
-      {:unix, _name} -> :ok
-      {:win32, _name} -> error(plan, :execution, {:unsupported_platform, :win32})
-    end
+  defp validate_timeout!(:infinity), do: :infinity
+  defp validate_timeout!(timeout) when is_integer(timeout) and timeout > 0, do: timeout
+
+  defp validate_timeout!(_value), do: raise(ArgumentError, "expected :timeout to be a positive integer or :infinity")
+
+  defp validate_executable_option!(executable) when is_binary(executable) do
+    if String.trim(executable) == "",
+      do: raise(ArgumentError, "expected :executable to be a non-blank string")
+
+    executable
   end
+
+  defp validate_executable_option!(_value), do: raise(ArgumentError, "expected :executable to be a non-blank string")
 
   defp resolve_executable(plan, requested) do
     if String.contains?(requested, ["/", "\\"]) do
@@ -99,9 +101,15 @@ defmodule Apalachex do
   end
 
   defp probe_version(plan, executable) do
-    case command(executable, ["version"], stderr_to_stdout: true) do
+    case command(executable, ["version"], stderr_to_stdout: true, timeout: 5_000) do
       {:ok, output, 0} ->
         parse_version(plan, executable, output)
+
+      {:ok, output, :timeout} ->
+        error(plan, :version_probe, {:timeout, 5_000},
+          executable: executable,
+          output: output
+        )
 
       {:ok, output, status} ->
         error(plan, :version_probe, {:process_failed, status},
@@ -109,9 +117,6 @@ defmodule Apalachex do
           exit_status: status,
           output: output
         )
-
-      {:error, :eacces} ->
-        error(plan, :executable_discovery, {:not_executable, executable})
 
       {:error, reason} ->
         error(plan, :version_probe, {:process_start_failed, reason}, executable: executable)
@@ -195,14 +200,14 @@ defmodule Apalachex do
     end
   end
 
-  defp run_reserved(plan, executable, version) do
+  defp run_reserved(plan, executable, version, timeout) do
     started_at = DateTime.utc_now()
     path = Manifest.path(plan)
     running = Manifest.running(plan, executable, version, started_at)
 
     case Manifest.write(:initial, path, running) do
       :ok ->
-        result = execute_and_discover(plan, executable, version)
+        result = execute_and_discover(plan, executable, version, timeout)
 
         completed =
           Manifest.completed(
@@ -221,11 +226,20 @@ defmodule Apalachex do
     end
   end
 
-  defp execute_and_discover(plan, executable, version) do
-    case command(executable, plan.argv,
-           cd: plan.working_directory,
-           stderr_to_stdout: true
-         ) do
+  defp execute_and_discover(plan, executable, version, timeout) do
+    options =
+      if timeout == :infinity,
+        do: [cd: plan.working_directory, stderr_to_stdout: true],
+        else: [cd: plan.working_directory, stderr_to_stdout: true, timeout: timeout]
+
+    case command(executable, plan.argv, options) do
+      {:ok, output, :timeout} ->
+        error(plan, :execution, {:timeout, timeout},
+          executable: executable,
+          version: version,
+          output: output
+        )
+
       {:ok, output, status} ->
         discover_itfs(plan, executable, version, output, status)
 
@@ -354,7 +368,7 @@ defmodule Apalachex do
   defp manifest_reason(stage, path, reason), do: {:manifest_write_failed, stage, path, reason}
 
   defp command(executable, argv, options) do
-    {output, status} = System.cmd(executable, argv, options)
+    {output, status} = MuonTrap.cmd(executable, argv, options)
     {:ok, output, status}
   rescue
     exception in [ErlangError, ArgumentError] ->

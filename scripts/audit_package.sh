@@ -36,6 +36,7 @@ fi
 
 (
   cd "$package"
+  MIX_ENV=prod mix deps.get --only prod
   MIX_ENV=prod mix compile --warnings-as-errors
 )
 

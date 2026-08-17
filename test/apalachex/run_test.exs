@@ -24,36 +24,33 @@ defmodule Apalachex.RunTest do
       fn -> module.run(%{}) end,
       fn -> module.run(plan, %{executable: "tool"}) end,
       fn -> Apalachex.run(plan, executable: "a", executable: "b") end,
+      fn -> Apalachex.run(plan, timeout: 1, timeout: 2) end,
       fn -> Apalachex.run(plan, executable: "") end,
       fn -> Apalachex.run(plan, executable: 1) end,
+      fn -> Apalachex.run(plan, timeout: 0) end,
+      fn -> Apalachex.run(plan, timeout: -1) end,
+      fn -> Apalachex.run(plan, timeout: 1.0) end,
+      fn -> Apalachex.run(plan, timeout: nil) end,
       fn -> Apalachex.run(plan, unknown: true) end
     ]
 
     for call <- invalid, do: assert_raise(ArgumentError, call)
   end
 
-  test "rejects Windows before executable discovery or run allocation", %{root: root} do
-    Process.put({Apalachex, :os_type}, {:win32, :nt})
-    run_directory = Path.join(root, "windows-run")
-    plan = plan(run_directory)
+  test "accepts an infinite default or positive millisecond timeout without changing the plan", %{
+    root: root
+  } do
+    executable = install_fake(root, "supported")
+    default_plan = plan(Path.join(root, "default"))
+    finite_plan = plan(Path.join(root, "finite"))
 
-    assert_raise ArgumentError, fn -> Apalachex.run(plan, unknown: true) end
+    assert {:ok, %Result{plan: ^default_plan}} =
+             Apalachex.run(default_plan, executable: executable)
 
-    assert {:error,
-            %Error{
-              phase: :execution,
-              reason: {:unsupported_platform, :win32},
-              plan: ^plan,
-              executable: nil,
-              version: nil,
-              exit_status: nil,
-              output: nil,
-              itf_paths: [],
-              manifest_failure: nil
-            }} = Apalachex.run(plan, executable: "nonexistent-apalachex-candidate")
+    assert {:ok, %Result{plan: ^finite_plan}} =
+             Apalachex.run(finite_plan, executable: executable, timeout: 1_000)
 
-    refute File.exists?(run_directory)
-    refute run_directory |> Path.join("apalachex-run.json") |> File.exists?()
+    refute Map.has_key?(finite_plan.options, :timeout)
   end
 
   test "resolves the default and bare executable through PATH", %{root: root} do
@@ -88,16 +85,20 @@ defmodule Apalachex.RunTest do
              root |> Path.join("directory-run") |> plan() |> Apalachex.run(executable: root)
   end
 
-  test "classifies effective execute denial as executable discovery", %{root: root} do
+  test "treats an effective execute denial reported as status 1 as a version-probe exit", %{
+    root: root
+  } do
     executable = install_fake(root, "permission-denied-#{System.os_time(:nanosecond)}")
     File.chmod!(executable, 0o001)
     run_directory = Path.join(root, "permission-denied-run")
 
     assert {:error,
             %Error{
-              phase: :executable_discovery,
-              reason: {:not_executable, ^executable},
-              executable: nil
+              phase: :version_probe,
+              reason: {:process_failed, 1},
+              executable: ^executable,
+              exit_status: 1,
+              output: ""
             }} = run_directory |> plan() |> Apalachex.run(executable: executable)
 
     refute File.exists?(run_directory)
@@ -143,6 +144,29 @@ defmodule Apalachex.RunTest do
       assert is_binary(output)
       refute File.exists?(run_directory)
     end
+  end
+
+  test "bounds the version probe at five seconds without allocating a run", %{root: root} do
+    executable = install_fake(root, "version-timeout")
+    run_directory = Path.join(root, "version-timeout-run")
+    output = <<"version probe started", 255, "\n">>
+
+    assert {:error,
+            %Error{
+              phase: :version_probe,
+              reason: {:timeout, 5_000},
+              executable: ^executable,
+              version: nil,
+              exit_status: nil,
+              output: ^output,
+              itf_paths: []
+            }} =
+             run_directory
+             |> plan()
+             |> Apalachex.run(executable: executable, timeout: :infinity)
+
+    refute File.exists?(run_directory)
+    refute run_directory |> Path.join("apalachex-run.json") |> File.exists?()
   end
 
   test "reserves the exact directory exclusively and never reuses content", %{root: root} do

@@ -11,6 +11,7 @@ if [ "${1:-}" = "version" ]; then
     banner) printf 'Apalache\n0.58.3\n' ;;
     invalid-version) printf '\377version\n' ;;
     version-fail) printf 'probe failed\n' >&2; exit 2 ;;
+    version-timeout) printf 'version probe started\377\n'; sleep 6 ;;
     *) printf '0.58.3\n' ;;
   esac
   exit 0
@@ -43,6 +44,13 @@ case "$name" in
     printf 'stdout\377bytes\n'
     printf 'stderr\376bytes\n' >&2
     printf '{}\n' > "$run_directory/binary.itf.json"
+    ;;
+  execution-timeout)
+    printf 'partial output\377\n'
+    printf 'partial error\376\n' >&2
+    printf '{}\n' > "$run_directory/partial.itf.json"
+    printf '%s\n' "$$" > "$run_directory/process.pid"
+    sleep 6
     ;;
   status12)
     printf 'counterexample\n'

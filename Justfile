@@ -7,6 +7,14 @@ setup:
     #!/usr/bin/env bash
     set -euo pipefail
     fail() { printf 'setup: %s\n' "$*" >&2; exit 1; }
+    command -v make >/dev/null || fail 'make is required to build native dependencies'
+    if [[ "${CC+x}" == x ]]; then
+      [[ -n "$CC" ]] || fail 'CC must not be empty'
+      compiler="$CC"
+    else
+      compiler=cc
+    fi
+    command -v "$compiler" >/dev/null || fail "POSIX C compiler $compiler is required to build native dependencies"
     command -v asdf >/dev/null || fail 'asdf 0.16.5 is required'
     [[ "$(asdf --version)" == 'asdf version 0.16.5' ]] || fail "asdf 0.16.5 is required; found $(asdf --version)"
 

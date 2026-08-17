@@ -27,6 +27,7 @@ defmodule Apalachex.MixProject do
 
   defp deps do
     [
+      {:muontrap, "~> 1.8.0"},
       {:code_style, "~> 0.1.1", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},

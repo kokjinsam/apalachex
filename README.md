@@ -5,7 +5,7 @@ Safe, deterministic Apalache execution and artifact management for Elixir.
 Apalachex validates TLA+ inputs, constructs shell-free Apalache plans, runs
 exactly Apalache 0.58.3, and returns ordered paths to retained ITF files. It
 does not open, decode, or interpret ITF contents. Version 0.1.0 supports
-execution on POSIX systems only.
+building and execution on POSIX systems only.
 
 ## Installation
 
@@ -47,7 +47,7 @@ plan =
     run_directory: run_directory
   )
 
-{:ok, result} = Apalachex.run(plan)
+{:ok, result} = Apalachex.run(plan, timeout: 30_000)
 result.itf_paths
 ```
 
@@ -55,15 +55,23 @@ Every reserved run directory is retained. Its `apalachex-run.json` manifest
 records the running and completed lifecycle. A successful result always has at
 least one absolute top-level regular `.itf.json` path, sorted lexically.
 
+Timeout values are milliseconds. The default is `:infinity`. A finite timeout
+bounds only the wait for the main Apalache command, not the total duration of
+`run/2`. Execution remains synchronous. The version probe has a fixed 5,000 ms
+timeout and creates no run directory or manifest if it times out.
+
+A timed-out run retains its run directory and partial files, does not classify
+partial ITFs, and records the existing completed/failed manifest outcome.
+Caller-death cleanup belongs to the internal process manager. A retained
+`running` manifest means that no terminal Apalachex outcome was committed.
+
 ## Supported boundary
 
 - Elixir `~> 1.18`
 - Apalache exactly `0.58.3` or `v0.58.3`
-- POSIX execution only; Windows is rejected after strict option validation and
-  before executable discovery, version probing, run-directory allocation,
-  manifest creation, or process execution
+- POSIX build and execution only
 - synchronous execution without a shell
-- no timeout, cancellation, supervision, cleanup, or ITF interpretation
+- no cancellation API, asynchronous API, recovery, or ITF interpretation
 
 ## Development
 
@@ -79,10 +87,12 @@ just consumer-smoke
 just test-apalache
 ```
 
-`just setup` requires asdf 0.16.5 and installs the pinned tools from
-`.tool-versions`. The consumer and real-Apalache checks require Apalache 0.58.3;
-the latter is installed by the owned asdf plugin and selected by the repository
-toolchain.
+`just setup` requires asdf 0.16.5, system `make`, and a POSIX C compiler. Set
+`CC` to select the compiler; when `CC` is unset, `cc` is used. These native host
+prerequisites are not managed by `.tool-versions`. After it checks them,
+`just setup` installs the pinned tools from `.tool-versions`. The consumer and
+real-Apalache checks require Apalache 0.58.3; the latter is installed by the
+owned asdf plugin and selected by the repository toolchain.
 
 ### Maintainer release
 
