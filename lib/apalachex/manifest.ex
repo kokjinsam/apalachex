@@ -147,7 +147,7 @@ defmodule Apalachex.Manifest do
     case Application.spec(:apalachex, :vsn) do
       version when is_list(version) -> List.to_string(version)
       version when version != nil -> to_string(version)
-      nil -> "0.1.0"
+      nil -> "0.2.0"
     end
   end
 

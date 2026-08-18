@@ -4,7 +4,7 @@ Safe, deterministic Apalache execution and artifact management for Elixir.
 
 Apalachex validates TLA+ inputs, constructs shell-free Apalache plans, runs
 exactly Apalache 0.58.3, and returns ordered paths to retained ITF files. It
-does not open, decode, or interpret ITF contents. Version 0.1.0 supports
+does not open, decode, or interpret ITF contents. Version 0.2.0 supports
 building and execution on POSIX systems only.
 
 ## Installation
@@ -14,10 +14,13 @@ Add `apalachex` to the dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:apalachex, "~> 0.1.0"}
+    {:apalachex, "~> 0.2.0"}
   ]
 end
 ```
+
+Apalachex is POSIX-only. Its production dependencies require system `make`
+and a POSIX C compiler.
 
 Apalache 0.58.3 must be available as `apalache-mc` on `PATH`, or supplied with
 the `:executable` option.

@@ -44,7 +44,7 @@ defmodule Apalachex.ManifestTest do
     assert running["schema_version"] == 1
     assert running["status"] == "running"
     assert running["outcome"] == nil
-    assert running["producer"] == %{"name" => "apalachex", "version" => "0.1.1"}
+    assert running["producer"] == %{"name" => "apalachex", "version" => "0.2.0"}
     assert running["spec"] == %{"source" => @source, "config" => nil}
     assert running["plan"]["argv"] == plan.argv
     assert running["execution"]["apalache_version"] == "0.58.3"
