@@ -5,7 +5,11 @@ defmodule Apalachex.SpecTest do
   alias Apalachex.Spec.Error
 
   setup do
-    root = "tmp/tests" |> Path.join("spec-#{System.unique_integer([:positive])}") |> Path.expand()
+    root =
+      "tmp/tests"
+      |> Path.join("spec-#{System.os_time(:nanosecond)}-#{System.pid()}-#{System.unique_integer([:positive])}")
+      |> Path.expand()
+
     File.mkdir_p!(root)
     %{root: root}
   end

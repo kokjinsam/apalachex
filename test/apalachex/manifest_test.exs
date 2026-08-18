@@ -23,7 +23,7 @@ defmodule Apalachex.ManifestTest do
   setup do
     root =
       "tmp/tests"
-      |> Path.join("manifest-#{System.unique_integer([:positive])}")
+      |> Path.join("manifest-#{System.os_time(:nanosecond)}-#{System.pid()}-#{System.unique_integer([:positive])}")
       |> Path.expand()
 
     File.mkdir_p!(root)

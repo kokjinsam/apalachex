@@ -11,7 +11,11 @@ defmodule Apalachex.RunTest do
   @config Path.expand("../fixtures/specs/Counter.cfg", __DIR__)
 
   setup do
-    root = "tmp/tests" |> Path.join("run-#{System.unique_integer([:positive])}") |> Path.expand()
+    root =
+      "tmp/tests"
+      |> Path.join("run-#{System.os_time(:nanosecond)}-#{System.pid()}-#{System.unique_integer([:positive])}")
+      |> Path.expand()
+
     File.mkdir_p!(root)
     %{root: root}
   end

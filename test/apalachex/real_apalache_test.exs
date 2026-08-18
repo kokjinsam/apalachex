@@ -17,7 +17,7 @@ defmodule Apalachex.RealApalacheTest do
 
     root =
       "tmp/tests"
-      |> Path.join("real-apalache-#{System.unique_integer([:positive])}")
+      |> Path.join("real-apalache-#{System.os_time(:nanosecond)}-#{System.pid()}-#{System.unique_integer([:positive])}")
       |> Path.expand()
 
     File.mkdir_p!(root)
